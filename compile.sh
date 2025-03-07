@@ -1,1 +1,1 @@
-gcc -o main src/main.c -lleif -lglfw -lm -lGL -lclipboard $(pkg-config --cflags --libs xcb)
+gcc -o main src/main.c src/eval.h -lleif -lglfw -lm -lGL -lclipboard $(pkg-config --cflags --libs xcb)
