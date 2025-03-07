@@ -94,9 +94,11 @@ void render_buttons(){
             props.text_color = LF_WHITE;
             props.color = (LfColor){80, 80, 80, 255};
             lf_push_style_props(props);
-            if(lf_button_fixed(icons[iconidx++], w, h) == LF_CLICKED){
-                exec_op(iconidx++);
-            }
+            if(lf_button_fixed(icons[iconidx], w, h) == LF_CLICKED){
+                printf("Botón presionado: %s\n", icons[iconidx]);
+                exec_op(iconidx); // Llama a la función para agregar el carácter
+                }
+            iconidx++;
             lf_pop_style_props();
 
             x += w + PADDING;
@@ -115,10 +117,17 @@ static void resizecb(GLFWwindow* win, int w, int h){
     glViewport(0, 0, w, h);
 }
 
-void add_input(char c){
-
-    lf_input_insert_char_idx(&s.input, c, s.input.cursor_index++);
-
+void add_input(char c) {
+    // Verificar si el carácter es ASCII y válido
+    if((unsigned char)c < 128){
+        if(s.input.cursor_index < s.input.buf_size){
+            lf_input_insert_char_idx(&s.input, c, s.input.cursor_index++);
+            s.input.selected = true;
+        }
+    }
+    else{
+        fprintf(stderr, "Carácter no válido: %c\n", c);
+    }
 }
 
 void exec_op(uint32_t idx){
@@ -127,23 +136,24 @@ void exec_op(uint32_t idx){
         case 0:  { break; }
         case 1:  { break; }
         case 2:  { break; }
-        case 3:  { add_input("/"); break; }
-        case 4:  { add_input("7"); break; }
-        case 5:  { add_input("8"); break; }
-        case 6:  { add_input("9"); break; }
-        case 7:  { add_input("*"); break; }
-        case 8:  { add_input("4"); break; }
-        case 9:  { add_input("5"); break; }
-        case 10: { add_input("6"); break; }
-        case 11: { add_input("-"); break; }
-        case 12: { add_input("1"); break; }
-        case 13: { add_input("2"); break; }
-        case 14: { add_input("3"); break; }
-        case 15: { add_input("+"); break; }
+        case 3:  { add_input('/'); break; }
+        case 4:  { add_input('7'); break; }
+        case 5:  { add_input('8'); break; }
+        case 6:  { add_input('9'); break; }
+        case 7:  { add_input('*'); break; }
+        case 8:  { add_input('4'); break; }
+        case 9:  { add_input('5'); break; }
+        case 10: { add_input('6'); break; }
+        case 11: { add_input('-'); break; }
+        case 12: { add_input('1'); break; }
+        case 13: { add_input('2'); break; }
+        case 14: { add_input('3'); break; }
+        case 15: { add_input('+'); break; }
         case 16: { break; }
-        case 17: { add_input("0"); break; }
-        case 18: { add_input("."); break; }
-        case 19: { add_input("="); break; }
+        case 17: { add_input('0'); break; }
+        case 18: { add_input('.'); break; }
+        case 19: { add_input('='); break; }
+        default: { break; }
     }
 
 }
@@ -165,6 +175,7 @@ int main(){
         .max_chars = BUFFER_SIZE,
         .placeholder = "",
         .selected = true,
+        //.insert_override_callback = insertcb
 };
 
 	glfwMakeContextCurrent(window);
