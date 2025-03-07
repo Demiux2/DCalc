@@ -63,8 +63,7 @@ double parse_expr(char** expr){
         if(op == '+'){
             result += next_term;
         }
-        else
-        {
+        else{
             result -= next_term;
         }
         skip_spaces_str(expr);

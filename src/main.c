@@ -12,6 +12,7 @@
 #define PADDING 15.0f
 
 #define BUFFER_SIZE 256
+#define HIST_MAX 32
 
 #define FONT "/usr/share/fonts/truetype/robotomono/RobotoMono-Bold.ttf"
 
@@ -19,12 +20,13 @@ static void render_panel();
 static void render_buttons();
 
 static void resizecb(GLFWwindow* win, int w, int h);
+static void insertcb(void* input_data);
 
 static void exec_op(uint32_t idx);
 
 static void add_input(char c);
-
 static void handle_keys();
+static void eval_input();
 
 typedef struct{
     int winw, winh;
@@ -33,6 +35,8 @@ typedef struct{
     char input_buffer[BUFFER_SIZE];
 
     LfFont panelfont;
+
+    const char* hist;
 } State;
 
 static const char* icons [20] = {
@@ -105,9 +109,8 @@ void render_buttons(){
             props.color = (LfColor){80, 80, 80, 255};
             lf_push_style_props(props);
             if(lf_button_fixed(icons[iconidx], w, h) == LF_CLICKED){
-                printf("Botón presionado: %s\n", icons[iconidx]);
                 exec_op(iconidx); // Llama a la función para agregar el carácter
-                }
+            }
             iconidx++;
             lf_pop_style_props();
 
@@ -134,7 +137,7 @@ void insertcb(void* input_data){
     LfInputField* input = (LfInputField*)input_data;
     char ch = lf_char_event().charcode;
     bool isop = (ch == '+' || ch == '-' || ch == '*' || ch == '/');
-    if(isdigit(ch)){
+    if(isdigit(ch) || ch == '+' || ch == '-' || ch == '*' || ch == '/'){
         lf_input_insert_char_idx(input, ch, input->cursor_index++);
     }
 }
@@ -143,24 +146,20 @@ void insertcb(void* input_data){
 
 void handle_keys(){
     if(lf_key_went_down(GLFW_KEY_ENTER)){
-        double result = eval_expr(s.input_buffer);
-        printf("Result is: %f\n", result);
-        memset(s.input_buffer, 0, sizeof(s.input_buffer));
-        s.input.cursor_index = 0;
+        eval_input();
     }
 }
 
-void add_input(char c) {
-    // Verificar si el carácter es ASCII y válido
-    if((unsigned char)c < 128){
-        if(s.input.cursor_index < s.input.buf_size){
-            lf_input_insert_char_idx(&s.input, c, s.input.cursor_index++);
-            s.input.selected = true;
-        }
-    }
-    else{
-        fprintf(stderr, "Carácter no válido: %c\n", c);
-    }
+void add_input(char c){
+    lf_input_insert_char_idx(&s.input, c, s.input.cursor_index++);
+    s.input.selected = true;
+}
+
+void eval_input(){
+    double result = eval_expr(s.input_buffer);
+    printf("Result is: %f\n", result);
+    memset(s.input_buffer, 0, sizeof(s.input_buffer));
+    s.input.cursor_index = 0;
 }
 
 void exec_op(uint32_t idx){
@@ -185,7 +184,7 @@ void exec_op(uint32_t idx){
         case 16: { break; }
         case 17: { add_input('0'); break; }
         case 18: { add_input('.'); break; }
-        case 19: { add_input('='); break; }
+        case 19: { eval_input(); break; }
         default: { break; }
     }
 
@@ -208,7 +207,7 @@ int main(){
         .max_chars = BUFFER_SIZE,
         .placeholder = "",
         .selected = true,
-        //.insert_override_callback = insertcb
+        .insert_override_callback = insertcb
 };
 
 	glfwMakeContextCurrent(window);
