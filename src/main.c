@@ -1,7 +1,11 @@
 #include <GL/gl.h>
 #include <stdio.h>
+#include <string.h>
+#include <ctype.h>
 #include <GLFW/glfw3.h>
 #include <leif/leif.h>
+
+#include "eval.h"
 
 #define WIN_W 400
 #define WIN_H 600
@@ -17,6 +21,10 @@ static void render_buttons();
 static void resizecb(GLFWwindow* win, int w, int h);
 
 static void exec_op(uint32_t idx);
+
+static void add_input(char c);
+
+static void handle_keys();
 
 typedef struct{
     int winw, winh;
@@ -36,6 +44,8 @@ static const char* icons [20] = {
 };
 
 static State s;
+
+//Renderizado
 
 void render_panel(){
 
@@ -109,12 +119,35 @@ void render_buttons(){
 
 }
 
+//Manejo de ventana
+
 static void resizecb(GLFWwindow* win, int w, int h){
     (void)win;
     s.winw = w;
     s.winh = h;
     lf_resize_display(w, h);
     glViewport(0, 0, w, h);
+}
+
+void insertcb(void* input_data){
+
+    LfInputField* input = (LfInputField*)input_data;
+    char ch = lf_char_event().charcode;
+    bool isop = (ch == '+' || ch == '-' || ch == '*' || ch == '/');
+    if(isdigit(ch)){
+        lf_input_insert_char_idx(input, ch, input->cursor_index++);
+    }
+}
+
+//Manejo de lógica
+
+void handle_keys(){
+    if(lf_key_went_down(GLFW_KEY_ENTER)){
+        double result = eval_expr(s.input_buffer);
+        printf("Result is: %f\n", result);
+        memset(s.input_buffer, 0, sizeof(s.input_buffer));
+        s.input.cursor_index = 0;
+    }
 }
 
 void add_input(char c) {
@@ -206,6 +239,8 @@ int main(){
             render_buttons();
 		
 		lf_end();
+
+        handle_keys();
 
 		glfwPollEvents();
 		glfwSwapBuffers(window);
